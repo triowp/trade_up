@@ -1,0 +1,45 @@
+.footer {
+  background: #1e2e1a;
+  color: #a8c4a0;
+  margin-top: 6rem;
+}
+
+.footer__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.footer__brand {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.2rem;
+  color: #e8f5e2;
+}
+
+.footer__brand p {
+  font-size: 0.85rem;
+  margin-top: 0.3rem;
+  color: #7a9e72;
+  font-family: inherit;
+}
+
+.footer__links {
+  display: flex;
+  gap: 2rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.footer__links span:hover { color: #c8e6c0; }
+
+.footer__copy {
+  font-size: 0.75rem;
+  color: #5a7a54;
+}
