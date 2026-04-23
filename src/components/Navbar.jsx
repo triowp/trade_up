@@ -19,7 +19,7 @@ export default function Navbar() {
     <header className="navbar">
       <div className="navbar__inner">
         <NavLink to="/" className="navbar__logo">
-          🌿 <span>FreshMarket</span>
+          🌿✓ <span>FreshMarket</span>
         </NavLink>
 
         <nav className={`navbar__links ${menuOpen ? "open" : ""}`}>

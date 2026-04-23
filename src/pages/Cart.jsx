@@ -75,7 +75,6 @@ export default function Cart() {
             </div>
           </div>
           <Link to="/checkout" className="cart__checkout">Оформить заказ →</Link>
-          <Link to="/shop" className="cart__continue">← Продолжить покупки</Link>
         </div>
       </div>
     </div>
