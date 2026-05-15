@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useEffect, useState } from "react";
+import { useAuth } from "../context/useAuth";
+import { fetchOrdersByUser } from "../api/orders";
 import "./OrderHistory.css";
 
 export default function OrderHistory() {
@@ -7,10 +8,23 @@ export default function OrderHistory() {
     const [orders, setOrders] = useState([]);
 
     useEffect(() => {
-        const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-        const userOrders = allOrders.filter((order) => order.userId === user.id);
-        setOrders(userOrders.sort((a, b) => new Date(b.date) - new Date(a.date)));
-    }, [user.id]);
+        if (!user?.id) {
+            setOrders([]);
+            return;
+        }
+
+        fetchOrdersByUser(user.id)
+            .then((data) => {
+                setOrders(
+                    Array.isArray(data)
+                        ? data.sort((a, b) => new Date(b.date) - new Date(a.date))
+                        : []
+                );
+            })
+            .catch(() => {
+                setOrders([]);
+            });
+    }, [user]);
 
     return (
         <div className="order-history">

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCart } from "../context/CartContext";
-import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/useCart";
+import { useAuth } from "../context/useAuth";
+import { createOrder } from "../api/orders";
 import "./Checkout.css";
 
 export default function Checkout() {
@@ -17,34 +18,53 @@ export default function Checkout() {
     deliveryMethod: "courier"
   });
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [orderNumber, setOrderNumber] = useState(null);
+  const [orderError, setOrderError] = useState("");
 
-  if (!user) {
-    navigate("/login");
-    return null;
-  }
+  useEffect(() => {
+    if (!user) {
+      navigate("/login");
+    }
+  }, [user, navigate]);
 
-  if (items.length === 0 && !orderPlaced) {
-    navigate("/cart");
-    return null;
-  }
+  useEffect(() => {
+    if (user && items.length === 0 && !orderPlaced) {
+      navigate("/cart");
+    }
+  }, [user, items.length, orderPlaced, navigate]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Here you would typically send the order to a backend
-    console.log("Order placed:", { items, totalPrice, formData });
+    setOrderError("");
 
-    // Simulate order placement
-    setOrderPlaced(true);
-    clearCart();
+    const orderPayload = {
+      userId: user?.id,
+      items,
+      total: totalPrice,
+      status: "pending",
+      paymentMethod: formData.paymentMethod,
+      deliveryMethod: formData.deliveryMethod,
+      address: formData.address,
+      city: "",
+      phone: formData.phone,
+    };
 
-    // Redirect after a delay
-    setTimeout(() => {
-      navigate("/profile");
-    }, 3000);
+    try {
+      const order = await createOrder(orderPayload);
+      setOrderNumber(order.id || Date.now().toString());
+      setOrderPlaced(true);
+      clearCart();
+      setTimeout(() => {
+        navigate("/profile");
+      }, 3000);
+    } catch (err) {
+      console.error(err);
+      setOrderError("Не удалось отправить заказ. Попробуйте позже.");
+    }
   };
 
   if (orderPlaced) {
@@ -57,7 +77,7 @@ export default function Checkout() {
             <p>Спасибо за покупку. Ваш заказ успешно принят.</p>
             <p>Мы свяжемся с вами в ближайшее время для подтверждения деталей.</p>
             <div className="order-details">
-              <p><strong>Номер заказа:</strong> #{Date.now()}</p>
+              <p><strong>Номер заказа:</strong> #{orderNumber}</p>
               <p><strong>Общая сумма:</strong> {totalPrice.toFixed(2)} ₽</p>
             </div>
             <p className="redirect-message">Перенаправление в профиль через 3 секунды...</p>
@@ -173,6 +193,7 @@ export default function Checkout() {
                   </div>
                 </div>
 
+                {orderError && <p className="error">{orderError}</p>}
                 <button type="submit" className="btn btn--primary btn--large">
                   Оформить заказ
                 </button>

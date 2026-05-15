@@ -1,25 +1,29 @@
-const BASE_URL = "https://fakestoreapi.com";
+const BASE_URL = "/api";
+
+async function handleResponse(res) {
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(body?.message || "Серверная ошибка при загрузке товаров");
+  }
+  return body;
+}
 
 export async function fetchProducts() {
   const res = await fetch(`${BASE_URL}/products`);
-  if (!res.ok) throw new Error("Не удалось загрузить товары");
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function fetchProduct(id) {
-  const res = await fetch(`${BASE_URL}/products/${id}`);
-  if (!res.ok) throw new Error("Товар не найден");
-  return res.json();
+  const res = await fetch(`${BASE_URL}/products/${encodeURIComponent(id)}`);
+  return handleResponse(res);
 }
 
 export async function fetchCategories() {
   const res = await fetch(`${BASE_URL}/products/categories`);
-  if (!res.ok) throw new Error("Не удалось загрузить категории");
-  return res.json();
+  return handleResponse(res);
 }
 
 export async function fetchProductsByCategory(category) {
   const res = await fetch(`${BASE_URL}/products/category/${encodeURIComponent(category)}`);
-  if (!res.ok) throw new Error("Не удалось загрузить категорию");
-  return res.json();
+  return handleResponse(res);
 }

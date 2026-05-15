@@ -1,42 +1,57 @@
-import { createContext, useContext, useState, useEffect } from "react";
-
-const AuthContext = createContext(null);
+import { useState } from "react";
+import { AuthContext } from "./AuthContextValue";
+import { login as apiLogin, register as apiRegister, updateProfile as apiUpdateProfile } from "../api/auth";
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Load user from localStorage on mount
+  const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
-  }, []);
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+  const [loading, setLoading] = useState(false);
 
-  const login = (email, password) => {
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const foundUser = users.find(u => u.email === email && u.password === password);
-    if (foundUser) {
-      setUser(foundUser);
-      localStorage.setItem("user", JSON.stringify(foundUser));
-      return true;
-    }
-    return false;
+  const persistUser = (userData) => {
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
   };
 
-  const register = (name, email, password) => {
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    if (users.find(u => u.email === email)) {
-      return false; // User already exists
+  const login = async (email, password) => {
+    setLoading(true);
+    try {
+      const userData = await apiLogin(email, password);
+      persistUser(userData);
+      return userData;
+    } catch {
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const foundUser = users.find((u) => u.email === email && u.password === password);
+      if (foundUser) {
+        persistUser(foundUser);
+        return foundUser;
+      }
+      return null;
+    } finally {
+      setLoading(false);
     }
-    const newUser = { id: Date.now(), name, email, password };
-    users.push(newUser);
-    localStorage.setItem("users", JSON.stringify(users));
-    setUser(newUser);
-    localStorage.setItem("user", JSON.stringify(newUser));
-    return true;
+  };
+
+  const register = async (name, email, password) => {
+    setLoading(true);
+    try {
+      const userData = await apiRegister(name, email, password);
+      persistUser(userData);
+      return userData;
+    } catch {
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      if (users.find((u) => u.email === email)) {
+        return null;
+      }
+      const newUser = { id: Date.now(), name, email, password };
+      users.push(newUser);
+      localStorage.setItem("users", JSON.stringify(users));
+      persistUser(newUser);
+      return newUser;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = () => {
@@ -44,17 +59,22 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("user");
   };
 
-  const updateProfile = (updates) => {
-    if (!user) return;
-    const updatedUser = { ...user, ...updates };
-    setUser(updatedUser);
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    // Update in users array
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const index = users.findIndex(u => u.id === user.id);
-    if (index !== -1) {
-      users[index] = updatedUser;
-      localStorage.setItem("users", JSON.stringify(users));
+  const updateProfile = async (updates) => {
+    if (!user) return null;
+    try {
+      const updatedUser = await apiUpdateProfile(user.id, updates);
+      persistUser(updatedUser);
+      return updatedUser;
+    } catch {
+      const updatedUser = { ...user, ...updates };
+      persistUser(updatedUser);
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const index = users.findIndex((u) => u.id === user.id);
+      if (index !== -1) {
+        users[index] = updatedUser;
+        localStorage.setItem("users", JSON.stringify(users));
+      }
+      return updatedUser;
     }
   };
 
@@ -63,8 +83,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
 }

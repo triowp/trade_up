@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import "./Register.css";
 
 export default function Register() {
@@ -13,16 +13,23 @@ export default function Register() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
     if (formData.password !== formData.confirmPassword) {
       setError("Пароли не совпадают");
       return;
     }
-    if (register(formData.name, formData.email, formData.password)) {
-      navigate("/profile");
-    } else {
-      setError("Пользователь с таким email уже существует");
+
+    try {
+      const createdUser = await register(formData.name, formData.email, formData.password);
+      if (createdUser) {
+        navigate("/profile");
+      } else {
+        setError("Пользователь с таким email уже существует");
+      }
+    } catch {
+      setError("Не удалось зарегистрироваться. Попробуйте позже.");
     }
   };
 

@@ -1,12 +1,11 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useState } from "react";
+import { useAuth } from "../../context/useAuth";
 import "./SupplierDashboard.css";
 
 export default function SupplierDashboard() {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState("overview");
-    const [products, setProducts] = useState([]);
-    const [orders, setOrders] = useState([]);
+    const [, setRefreshKey] = useState(0);
     const [newProduct, setNewProduct] = useState({
         title: "",
         price: "",
@@ -14,40 +13,27 @@ export default function SupplierDashboard() {
         description: "",
         image: "",
     });
-    const [stats, setStats] = useState({
-        totalProducts: 0,
-        totalOrders: 0,
-        totalRevenue: 0,
-        pendingOrders: 0,
-    });
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = () => {
-        // Load products from supplier
-        const allProducts = JSON.parse(localStorage.getItem("supplierProducts") || "[]");
-        const supplierProducts = allProducts.filter((p) => p.supplierId === user.id);
-        setProducts(supplierProducts);
-
-        // Load orders for this supplier
-        const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-        const supplierOrders = allOrders.filter((o) => o.supplierId === user.id);
-        setOrders(supplierOrders);
-
-        // Calculate stats
-        const totalRevenue = supplierOrders
-            .filter((o) => o.status === "delivered")
-            .reduce((sum, o) => sum + o.total, 0);
-        const pendingOrders = supplierOrders.filter((o) => o.status === "pending").length;
-
-        setStats({
-            totalProducts: supplierProducts.length,
-            totalOrders: supplierOrders.length,
-            totalRevenue,
-            pendingOrders,
-        });
+    const userId = user?.id;
+    const products = userId
+        ? JSON.parse(localStorage.getItem("supplierProducts") || "[]").filter(
+              (p) => p.supplierId === userId
+          )
+        : [];
+    const orders = userId
+        ? JSON.parse(localStorage.getItem("orders") || "[]").filter(
+              (o) => o.supplierId === userId
+          )
+        : [];
+    const totalRevenue = orders
+        .filter((o) => o.status === "delivered")
+        .reduce((sum, o) => sum + o.total, 0);
+    const pendingOrders = orders.filter((o) => o.status === "pending").length;
+    const stats = {
+        totalProducts: products.length,
+        totalOrders: orders.length,
+        totalRevenue,
+        pendingOrders,
     };
 
     const addProduct = (e) => {
@@ -76,14 +62,14 @@ export default function SupplierDashboard() {
             description: "",
             image: "",
         });
-        loadData();
+        setRefreshKey((prev) => prev + 1);
     };
 
     const deleteProduct = (productId) => {
         const allProducts = JSON.parse(localStorage.getItem("supplierProducts") || "[]");
         const updated = allProducts.filter((p) => p.id !== productId);
         localStorage.setItem("supplierProducts", JSON.stringify(updated));
-        loadData();
+        setRefreshKey((prev) => prev + 1);
     };
 
     const updateOrderStatus = (orderId, newStatus) => {
@@ -92,7 +78,7 @@ export default function SupplierDashboard() {
             o.id === orderId ? { ...o, status: newStatus } : o
         );
         localStorage.setItem("orders", JSON.stringify(updated));
-        loadData();
+        setRefreshKey((prev) => prev + 1);
     };
 
     return (

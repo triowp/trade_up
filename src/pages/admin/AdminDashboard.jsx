@@ -1,47 +1,21 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useState } from "react";
 import "./AdminDashboard.css";
 
 export default function AdminDashboard() {
-    const { user } = useAuth();
     const [activeTab, setActiveTab] = useState("overview");
-    const [stats, setStats] = useState({
-        totalUsers: 0,
-        totalOrders: 0,
-        totalRevenue: 0,
-        pendingSuppliers: 0,
-    });
-    const [suppliers, setSuppliers] = useState([]);
-    const [orders, setOrders] = useState([]);
-    const [users, setUsers] = useState([]);
+    const [, setRefreshKey] = useState(0);
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = () => {
-        // Load suppliers
-        const allUsers = JSON.parse(localStorage.getItem("users") || "[]");
-        const supplierList = allUsers.filter((u) => u.role === "supplier");
-        setSuppliers(supplierList);
-
-        // Load orders
-        const allOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-        setOrders(allOrders);
-
-        // Load users
-        setUsers(allUsers);
-
-        // Calculate stats
-        const totalRevenue = allOrders.reduce((sum, o) => sum + o.total, 0);
-        const pendingSuppliers = supplierList.filter((s) => !s.isVerified).length;
-
-        setStats({
-            totalUsers: allUsers.length,
-            totalOrders: allOrders.length,
-            totalRevenue,
-            pendingSuppliers,
-        });
+    const allUsers = JSON.parse(localStorage.getItem("users") || "[]");
+    const suppliers = allUsers.filter((u) => u.role === "supplier");
+    const users = allUsers;
+    const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+    const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
+    const pendingSuppliers = suppliers.filter((s) => !s.isVerified).length;
+    const stats = {
+        totalUsers: allUsers.length,
+        totalOrders: orders.length,
+        totalRevenue,
+        pendingSuppliers,
     };
 
     const verifySupplier = (supplierId) => {
@@ -50,14 +24,14 @@ export default function AdminDashboard() {
             u.id === supplierId ? { ...u, isVerified: true } : u
         );
         localStorage.setItem("users", JSON.stringify(updated));
-        loadData();
+        setRefreshKey((prev) => prev + 1);
     };
 
     const rejectSupplier = (supplierId) => {
         const allUsers = JSON.parse(localStorage.getItem("users") || "[]");
         const updated = allUsers.filter((u) => u.id !== supplierId);
         localStorage.setItem("users", JSON.stringify(updated));
-        loadData();
+        setRefreshKey((prev) => prev + 1);
     };
 
     return (

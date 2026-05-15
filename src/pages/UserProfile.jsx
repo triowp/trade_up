@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useState, useEffect } from "react";
+import { useAuth } from "../context/useAuth";
 import { useNavigate } from "react-router-dom";
 import "./UserProfile.css";
 
@@ -36,6 +36,16 @@ export default function UserProfile() {
             setError(err.message);
         }
     };
+
+    useEffect(() => {
+        if (!user) {
+            navigate("/login");
+        }
+    }, [user, navigate]);
+
+    if (!user) {
+        return null;
+    }
 
     const handleLogout = () => {
         logout();

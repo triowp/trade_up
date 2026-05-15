@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { fetchProducts, fetchProductsByCategory, fetchCategories } from "../api/products";
 import ProductCard from "../components/ProductCard";
@@ -23,22 +23,38 @@ export default function Shop() {
 
   const activeCategory = searchParams.get("category") || "all";
 
-  useEffect(() => {
-    fetchCategories().then(setCategories).catch(() => {});
+  const loadCategories = useCallback(async () => {
+    try {
+      const data = await fetchCategories();
+      setCategories(data);
+    } catch {
+      // keep categories empty on failure
+    }
   }, []);
 
-  useEffect(() => {
+  const loadProducts = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const fn =
-      activeCategory === "all"
-        ? fetchProducts
-        : () => fetchProductsByCategory(activeCategory);
-    fn()
-      .then(setProducts)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+    try {
+      const data =
+        activeCategory === "all"
+          ? await fetchProducts()
+          : await fetchProductsByCategory(activeCategory);
+      setProducts(data);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   }, [activeCategory]);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   const filtered = useMemo(() => {
     let list = [...products];

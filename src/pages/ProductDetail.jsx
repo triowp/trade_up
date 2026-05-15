@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { fetchProduct } from "../api/products";
 import { useFetch } from "../hooks/useFetch";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../context/useCart";
 import { Loader, ErrorMsg } from "../components/Loader";
 import "./ProductDetail.css";
 

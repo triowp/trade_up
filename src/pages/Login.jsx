@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import "./Login.css";
 
 export default function Login() {
@@ -13,12 +13,18 @@ export default function Login() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (login(formData.email, formData.password)) {
-      navigate("/profile");
-    } else {
-      setError("Неверный email или пароль");
+    setError("");
+    try {
+      const loggedUser = await login(formData.email, formData.password);
+      if (loggedUser) {
+        navigate("/profile");
+      } else {
+        setError("Неверный email или пароль");
+      }
+    } catch {
+      setError("Не удалось выполнить вход. Попробуйте позже.");
     }
   };
 
